@@ -31,7 +31,7 @@ func TestGETPlayers(t *testing.T) {
 	server := &PlayerServer{&store}
 
 	t.Run("returns 404 on missing players", func(t *testing.T) {
-		request, _ := newGetScoreRequest("404")
+		request := newGetScoreRequest("404")
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -42,7 +42,7 @@ func TestGETPlayers(t *testing.T) {
 	})
 
 	t.Run("returns Pippin's score", func(t *testing.T) {
-		request, _ := newGetScoreRequest("Pippin")
+		request := newGetScoreRequest("Pippin")
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -52,7 +52,7 @@ func TestGETPlayers(t *testing.T) {
 	})
 
 	t.Run("returns Mary's score", func(t *testing.T) {
-		request, _ := newGetScoreRequest("Mary")
+		request := newGetScoreRequest("Mary")
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -62,12 +62,14 @@ func TestGETPlayers(t *testing.T) {
 	})
 }
 
-func newGetScoreRequest(name string) (*http.Request, error) {
-	return http.NewRequest(http.MethodGet, fmt.Sprintf("/players/%s", name), nil)
+func newGetScoreRequest(name string) *http.Request {
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/players/%s", name), nil)
+	return req
 }
 
-func newPostWinRequest(name string) (*http.Request, error) {
-	return http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s", name), nil)
+func newPostWinRequest(name string) *http.Request {
+	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s", name), nil)
+	return req
 }
 
 func assertStatus(t testing.TB, got, want int) {
@@ -88,7 +90,7 @@ func TestStoreWins(t *testing.T) {
 	server := &PlayerServer{store}
 
 	t.Run("it returns accepted on POST", func(t *testing.T) {
-		request, _ := newPostWinRequest("Pippin")
+		request := newPostWinRequest("Pippin")
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
