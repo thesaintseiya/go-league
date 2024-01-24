@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +29,7 @@ func TestGETPlayers(t *testing.T) {
 			"Mary":   10,
 		}}
 
-	server := &PlayerServer{&store}
+	server := NewPlayerServer(&store)
 
 	t.Run("returns 404 on missing players", func(t *testing.T) {
 		request := newGetScoreRequest("404")
@@ -87,7 +88,7 @@ func TestStoreWins(t *testing.T) {
 	store := &StubPlayerStore{
 		scores: map[string]int{},
 	}
-	server := &PlayerServer{store}
+	server := NewPlayerServer(store)
 
 	t.Run("it returns accepted on POST", func(t *testing.T) {
 		request := newPostWinRequest("Pippin")
@@ -103,5 +104,27 @@ func TestStoreWins(t *testing.T) {
 		if store.winCalls[0] != "Pippin" {
 			t.Errorf("did not store correct winner, got %q want %q", store.winCalls[0], "Pippin")
 		}
+	})
+}
+
+func TestLeague(t *testing.T) {
+	store := StubPlayerStore{}
+	server := NewPlayerServer(&store)
+
+	t.Run("it returns 200 on /league", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/league", nil)
+		res := httptest.NewRecorder()
+
+		server.ServeHTTP(res, req)
+
+		var got []Player
+
+		err := json.NewDecoder(res.Body).Decode(&got)
+
+		if err != nil {
+			t.Fatalf("unable to parse response from server %q into slice of Player: %v", res.Body, err)
+		}
+
+		assertStatus(t, res.Code, http.StatusOK)
 	})
 }
