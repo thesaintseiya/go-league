@@ -7,9 +7,12 @@ import (
 )
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	database, cleanup := createTempFile(t, "")
+	database, cleanup := createTempFile(t, "[]")
 	defer cleanup()
-	store := NewFileSystemPlayerStore(database)
+
+	store, err := NewFileSystemPlayerStore(database)
+	assertNoError(t, err)
+
 	server := NewPlayerServer(store)
 	player := "Pippin"
 
