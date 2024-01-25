@@ -18,8 +18,8 @@ func TestFileSystemStore(t *testing.T) {
 
 		got := store.GetLeague()
 		want := []Player{
-			{"Pippin", 10},
 			{"Mary", 33},
+			{"Pippin", 10},
 		}
 
 		assertLeague(t, got, want)
@@ -82,11 +82,34 @@ func TestFileSystemStore(t *testing.T) {
 	})
 
 	t.Run("works with an empty file", func(t *testing.T) {
-		database, cleanDatabase := createTempFile(t, "")
-		defer cleanDatabase()
+		database, cleanup := createTempFile(t, "")
+		defer cleanup()
 
 		_, err := NewFileSystemPlayerStore(database)
 		assertNoError(t, err)
+	})
+
+	t.Run("league gets sorted", func(t *testing.T) {
+		database, cleanup := createTempFile(t, `[
+			{"Name": "Pippin", "Wins": 10},
+			{"Name": "Mary", "Wins": 33}]
+		`)
+		defer cleanup()
+
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
+
+		got := store.GetLeague()
+		want := League{
+			{"Mary", 33},
+			{"Pippin", 10},
+		}
+
+		assertLeague(t, got, want)
+
+		// make sure file read position is getting reset
+		got = store.GetLeague()
+		assertLeague(t, got, want)
 	})
 }
 
