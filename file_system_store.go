@@ -1,15 +1,31 @@
-package main
+package poker
 
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 )
 
-type FileSystemPlayerStore struct {
-	database *json.Encoder
-	league   League
+func FileSystemPlayerStoreFromFile(filename string) (*FileSystemPlayerStore, func(), error) {
+	db, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
+
+	if err != nil {
+		log.Fatalf("problem opening %s %v", filename, err)
+	}
+
+	cleanup := func() {
+		db.Close()
+	}
+
+	store, err := NewFileSystemPlayerStore(db)
+
+	if err != nil {
+		log.Fatalf("problem creating file system player store, %v ", err)
+	}
+
+	return store, cleanup, nil
 }
 
 func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
@@ -19,7 +35,7 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 		return nil, fmt.Errorf("problem initialising player db file: %v", err)
 	}
 
-	league, err := NewLeague(file)
+	league, err := CreateLeague(file)
 
 	if err != nil {
 		return nil, fmt.Errorf("problem loading player store from file %s: %v", file.Name(), err)
@@ -31,21 +47,9 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 	}, nil
 }
 
-func initialisePlayerDBFile(file *os.File) error {
-	file.Seek(0, 0)
-
-	info, err := file.Stat()
-
-	if err != nil {
-		return fmt.Errorf("problem getting info from file %s: %v", file.Name(), err)
-	}
-
-	if info.Size() == 0 {
-		file.Write([]byte("[]"))
-		file.Seek(0, 0)
-	}
-
-	return nil
+type FileSystemPlayerStore struct {
+	database *json.Encoder
+	league   League
 }
 
 func (f *FileSystemPlayerStore) GetLeague() League {
@@ -74,4 +78,21 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 	}
 
 	f.database.Encode(f.league)
+}
+
+func initialisePlayerDBFile(file *os.File) error {
+	file.Seek(0, 0)
+
+	info, err := file.Stat()
+
+	if err != nil {
+		return fmt.Errorf("problem getting info from file %s: %v", file.Name(), err)
+	}
+
+	if info.Size() == 0 {
+		file.Write([]byte("[]"))
+		file.Seek(0, 0)
+	}
+
+	return nil
 }

@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"encoding/json"
@@ -17,8 +17,8 @@ func (l League) Find(name string) *Player {
 	return nil
 }
 
-func NewLeague(db io.Reader) ([]Player, error) {
-	var league []Player
+func CreateLeague(db io.Reader) (League, error) {
+	var league League
 	err := json.NewDecoder(db).Decode(&league)
 	if err != nil {
 		err = fmt.Errorf("error parsing league: %v", err)

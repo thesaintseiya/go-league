@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"fmt"
@@ -8,25 +8,6 @@ import (
 	"reflect"
 	"testing"
 )
-
-type StubPlayerStore struct {
-	scores   map[string]int
-	winCalls []string
-	league   League
-}
-
-func (s *StubPlayerStore) GetPlayerScore(name string) int {
-	score := s.scores[name]
-	return score
-}
-
-func (s *StubPlayerStore) RecordWin(name string) {
-	s.winCalls = append(s.winCalls, name)
-}
-
-func (s *StubPlayerStore) GetLeague() League {
-	return s.league
-}
 
 func TestGETPlayers(t *testing.T) {
 	store := StubPlayerStore{
@@ -85,11 +66,13 @@ func newLeagueRequest() *http.Request {
 }
 
 func assertStatus(t testing.TB, got, want int) {
+	t.Helper()
 	if got != want {
 		t.Errorf("got status %d, want %d", got, want)
 	}
 }
 func assertResponseBody(t testing.TB, got, want string) {
+	t.Helper()
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -117,13 +100,7 @@ func TestStoreWins(t *testing.T) {
 		server.ServeHTTP(response, request)
 
 		assertStatus(t, response.Code, http.StatusAccepted)
-
-		if len(store.winCalls) != 1 {
-			t.Errorf("got %d calls to RecordWin, expected 1", len(store.winCalls))
-		}
-		if store.winCalls[0] != "Pippin" {
-			t.Errorf("did not store correct winner, got %q want %q", store.winCalls[0], "Pippin")
-		}
+		AssertPlayerWin(t, store, "Pippin")
 	})
 }
 
@@ -153,7 +130,7 @@ func TestLeague(t *testing.T) {
 
 func getLeagueFromResponse(t testing.TB, body io.Reader) []Player {
 	t.Helper()
-	league, _ := NewLeague(body)
+	league, _ := CreateLeague(body)
 	return league
 }
 
